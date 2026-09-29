@@ -56,8 +56,11 @@ export const NotificationProvider = ({ children }) => {
 
     fetchNotifications();
 
+    const rawWsBase = import.meta.env.VITE_WS_URL || import.meta.env.VITE_API_URL || '';
+    const wsUrl = rawWsBase ? `${rawWsBase.replace(/\/+$/, '')}/ws` : '/ws';
+
     const client = new Client({
-      webSocketFactory: () => new SockJS('/ws'),
+      webSocketFactory: () => new SockJS(wsUrl),
       reconnectDelay: 5000,
       heartbeatIncoming: 4000,
       heartbeatOutgoing: 4000,
