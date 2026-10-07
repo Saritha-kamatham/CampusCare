@@ -229,4 +229,21 @@ public class Issue {
     public void setClosedAt(LocalDateTime closedAt) {
         this.closedAt = closedAt;
     }
+
+    // Spec compatibility alias methods
+    public String getTicketNo() {
+        return this.issueCode;
+    }
+
+    public void setTicketNo(String ticketNo) {
+        this.issueCode = ticketNo;
+    }
+
+    public Long getReporterId() {
+        return this.createdBy != null ? this.createdBy.getId() : null;
+    }
+
+    public Long getAssigneeId() {
+        return this.assignedStaff != null ? this.assignedStaff.getId() : null;
+    }
 }

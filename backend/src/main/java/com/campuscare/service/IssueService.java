@@ -4,6 +4,7 @@ import com.campuscare.dto.*;
 import com.campuscare.entity.*;
 import com.campuscare.exception.BadRequestException;
 import com.campuscare.exception.ForbiddenException;
+import com.campuscare.exception.IssueNotFoundException;
 import com.campuscare.exception.ResourceNotFoundException;
 import com.campuscare.repository.*;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,6 +25,7 @@ public class IssueService {
     private final UserRepository userRepository;
     private final AssignmentRepository assignmentRepository;
     private final IssueHistoryRepository issueHistoryRepository;
+    private final ActivityLogRepository activityLogRepository;
     private final CommentRepository commentRepository;
     private final NotificationService notificationService;
 
@@ -32,12 +34,14 @@ public class IssueService {
                         UserRepository userRepository,
                         AssignmentRepository assignmentRepository,
                         IssueHistoryRepository issueHistoryRepository,
+                        ActivityLogRepository activityLogRepository,
                         CommentRepository commentRepository,
                         NotificationService notificationService) {
         this.issueRepository = issueRepository;
         this.userRepository = userRepository;
         this.assignmentRepository = assignmentRepository;
         this.issueHistoryRepository = issueHistoryRepository;
+        this.activityLogRepository = activityLogRepository;
         this.commentRepository = commentRepository;
         this.notificationService = notificationService;
     }
@@ -70,6 +74,9 @@ public class IssueService {
         issue.setCreatedBy(student);
 
         issue = issueRepository.save(issue);
+
+        // Record initial activity log
+        activityLogRepository.save(new ActivityLog(issue.getId(), IssueStatus.REPORTED));
 
         // Record initial history
         IssueHistory history = new IssueHistory(
@@ -113,7 +120,7 @@ public class IssueService {
     @Transactional(readOnly = true)
     public IssueDetailDTO getIssueDetail(Long issueId) {
         Issue issue = issueRepository.findById(issueId)
-                .orElseThrow(() -> new ResourceNotFoundException("Issue not found with id: " + issueId));
+                .orElseThrow(() -> new IssueNotFoundException(issueId));
 
         IssueDetailDTO dto = IssueDetailDTO.fromEntity(issue);
 
@@ -161,7 +168,7 @@ public class IssueService {
     @Transactional
     public IssueDetailDTO assignIssue(Long issueId, AssignIssueRequest request, Long adminId) {
         Issue issue = issueRepository.findById(issueId)
-                .orElseThrow(() -> new ResourceNotFoundException("Issue not found with id: " + issueId));
+                .orElseThrow(() -> new IssueNotFoundException(issueId));
 
         User admin = userRepository.findById(adminId)
                 .orElseThrow(() -> new ResourceNotFoundException("Admin not found with id: " + adminId));
@@ -174,10 +181,15 @@ public class IssueService {
         }
 
         IssueStatus oldStatus = issue.getStatus();
+        validateTransition(oldStatus, IssueStatus.ASSIGNED);
+
         issue.setAssignedStaff(staff);
         issue.setAssignedAdmin(admin);
         issue.setStatus(IssueStatus.ASSIGNED);
         issue = issueRepository.save(issue);
+
+        // Record activity log
+        activityLogRepository.save(new ActivityLog(issue.getId(), IssueStatus.ASSIGNED));
 
         // Create assignment record
         Assignment assignment = new Assignment(issue, staff, admin, request.getNote());
@@ -215,7 +227,7 @@ public class IssueService {
     @Transactional
     public IssueDetailDTO acceptIssue(Long issueId, Long staffId) {
         Issue issue = issueRepository.findById(issueId)
-                .orElseThrow(() -> new ResourceNotFoundException("Issue not found with id: " + issueId));
+                .orElseThrow(() -> new IssueNotFoundException(issueId));
 
         User staff = userRepository.findById(staffId)
                 .orElseThrow(() -> new ResourceNotFoundException("Staff member not found with id: " + staffId));
@@ -225,8 +237,13 @@ public class IssueService {
         }
 
         IssueStatus oldStatus = issue.getStatus();
+        validateTransition(oldStatus, IssueStatus.IN_PROGRESS);
+
         issue.setStatus(IssueStatus.IN_PROGRESS);
         issue = issueRepository.save(issue);
+
+        // Record activity log
+        activityLogRepository.save(new ActivityLog(issue.getId(), IssueStatus.IN_PROGRESS));
 
         // Record history
         IssueHistory history = new IssueHistory(
@@ -253,7 +270,7 @@ public class IssueService {
     @Transactional
     public IssueDetailDTO claimIssue(Long issueId, Long staffId) {
         Issue issue = issueRepository.findById(issueId)
-                .orElseThrow(() -> new ResourceNotFoundException("Issue not found with id: " + issueId));
+                .orElseThrow(() -> new IssueNotFoundException(issueId));
 
         User staff = userRepository.findById(staffId)
                 .orElseThrow(() -> new ResourceNotFoundException("Staff member not found with id: " + staffId));
@@ -263,9 +280,14 @@ public class IssueService {
         }
 
         IssueStatus oldStatus = issue.getStatus();
+        validateTransition(oldStatus, IssueStatus.IN_PROGRESS);
+
         issue.setAssignedStaff(staff);
         issue.setStatus(IssueStatus.IN_PROGRESS);
         issue = issueRepository.save(issue);
+
+        // Record activity log
+        activityLogRepository.save(new ActivityLog(issue.getId(), IssueStatus.IN_PROGRESS));
 
         Assignment assignment = new Assignment(issue, staff, staff, "Self-assigned / claimed directly by staff member " + staff.getName());
         assignmentRepository.save(assignment);
@@ -293,7 +315,7 @@ public class IssueService {
     @Transactional
     public IssueDetailDTO updateStatus(Long issueId, StatusUpdateRequest request, Long userId) {
         Issue issue = issueRepository.findById(issueId)
-                .orElseThrow(() -> new ResourceNotFoundException("Issue not found with id: " + issueId));
+                .orElseThrow(() -> new IssueNotFoundException(issueId));
 
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
@@ -316,6 +338,8 @@ public class IssueService {
         IssueStatus oldStatus = issue.getStatus();
         IssueStatus newStatus = request.getStatus();
 
+        validateTransition(oldStatus, newStatus);
+
         issue.setStatus(newStatus);
         if (newStatus == IssueStatus.RESOLVED) {
             issue.setResolvedAt(LocalDateTime.now());
@@ -330,6 +354,9 @@ public class IssueService {
         }
 
         issue = issueRepository.save(issue);
+
+        // Record activity log
+        activityLogRepository.save(new ActivityLog(issue.getId(), newStatus));
 
         // History record
         String note = (request.getNotes() != null && !request.getNotes().trim().isEmpty())
@@ -381,7 +408,7 @@ public class IssueService {
     @Transactional
     public IssueDetailDTO updatePriority(Long issueId, Priority newPriority, Long adminId) {
         Issue issue = issueRepository.findById(issueId)
-                .orElseThrow(() -> new ResourceNotFoundException("Issue not found with id: " + issueId));
+                .orElseThrow(() -> new IssueNotFoundException(issueId));
         User admin = userRepository.findById(adminId)
                 .orElseThrow(() -> new ResourceNotFoundException("Admin not found with id: " + adminId));
 
@@ -399,6 +426,55 @@ public class IssueService {
         issueHistoryRepository.save(history);
 
         return getIssueDetail(issueId);
+    }
+
+    @Transactional(readOnly = true)
+    public List<IssueSummaryDTO> getMyIssues(Long studentId) {
+        return issueRepository.findByCreatedByIdOrderByCreatedAtDesc(studentId)
+                .stream().map(IssueSummaryDTO::fromEntity).collect(Collectors.toList());
+    }
+
+    @Transactional(readOnly = true)
+    public List<IssueSummaryDTO> getOpenIssues() {
+        return issueRepository.findByStatusAndAssignedStaffIsNullOrderByCreatedAtDesc(IssueStatus.REPORTED)
+                .stream().map(IssueSummaryDTO::fromEntity).collect(Collectors.toList());
+    }
+
+    @Transactional(readOnly = true)
+    public IssueDetailDTO getIssueByCode(String code) {
+        Issue issue = issueRepository.findByIssueCode(code)
+                .orElseThrow(() -> new IssueNotFoundException(code));
+        return getIssueDetail(issue.getId());
+    }
+
+    public void validateTransition(IssueStatus current, IssueStatus next) {
+        if (current == null || next == null) {
+            throw new BadRequestException("Status cannot be null.");
+        }
+        if (current == next) {
+            return;
+        }
+        boolean valid = false;
+        switch (current) {
+            case REPORTED:
+                valid = (next == IssueStatus.ASSIGNED || next == IssueStatus.IN_PROGRESS);
+                break;
+            case ASSIGNED:
+                valid = (next == IssueStatus.IN_PROGRESS || next == IssueStatus.REPORTED);
+                break;
+            case IN_PROGRESS:
+                valid = (next == IssueStatus.RESOLVED || next == IssueStatus.ASSIGNED);
+                break;
+            case RESOLVED:
+                valid = (next == IssueStatus.CLOSED || next == IssueStatus.IN_PROGRESS);
+                break;
+            case CLOSED:
+                valid = false;
+                break;
+        }
+        if (!valid) {
+            throw new BadRequestException("Invalid status transition from " + current + " to " + next);
+        }
     }
 
     public static boolean isCategoryRelatedToDepartment(IssueCategory category, String department) {

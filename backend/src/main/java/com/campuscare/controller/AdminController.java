@@ -72,4 +72,12 @@ public class AdminController {
         response.put("message", "User active status updated successfully");
         return ResponseEntity.ok(response);
     }
+
+    @PutMapping("/users/{id}")
+    public ResponseEntity<UserDTO> updateUser(
+            @PathVariable Long id,
+            @RequestBody UserDTO updates) {
+        UserDTO updated = userService.updateUser(id, updates);
+        return ResponseEntity.ok(updated);
+    }
 }

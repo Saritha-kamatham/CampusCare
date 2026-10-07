@@ -43,6 +43,9 @@ public class NotificationService {
             // Push to user's private notification topic: /topic/notifications/{userId}
             messagingTemplate.convertAndSend("/topic/notifications/" + recipient.getId(), dto);
 
+            // Global broadcast topic
+            messagingTemplate.convertAndSend("/topic/notifications", dto);
+
             // Also broadcast to admin or staff channels if applicable
             if (recipient.getRole() == Role.ROLE_ADMIN) {
                 messagingTemplate.convertAndSend("/topic/admin/notifications", dto);

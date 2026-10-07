@@ -82,4 +82,13 @@ public class Comment {
     public void setCreatedAt(LocalDateTime createdAt) {
         this.createdAt = createdAt;
     }
+
+    // Spec compatibility alias methods
+    public String getText() {
+        return this.content;
+    }
+
+    public void setText(String text) {
+        this.content = text;
+    }
 }

@@ -72,41 +72,33 @@ export const NotificationProvider = ({ children }) => {
     client.onConnect = (frame) => {
       setConnected(true);
 
-      // Subscribe to user-specific private notification topic
-      client.subscribe(`/topic/notifications/${user.id}`, (message) => {
+      const handleIncomingNotification = (message) => {
         try {
           const payload = JSON.parse(message.body);
-          setNotifications((prev) => [payload, ...prev]);
+          setNotifications((prev) => {
+            if (payload.id && prev.some((n) => n.id === payload.id)) {
+              return prev;
+            }
+            return [payload, ...prev];
+          });
           setUnreadCount((prev) => prev + 1);
           addToast(payload);
         } catch (e) {
           console.error('Failed to parse STOMP message:', e);
         }
-      });
+      };
+
+      // Subscribe to user-specific private notification topic
+      client.subscribe(`/topic/notifications/${user.id}`, handleIncomingNotification);
+
+      // Subscribe to global campus notifications topic
+      client.subscribe('/topic/notifications', handleIncomingNotification);
 
       // Role specific broadcasts
       if (user.role === 'ROLE_ADMIN') {
-        client.subscribe('/topic/admin/notifications', (message) => {
-          try {
-            const payload = JSON.parse(message.body);
-            setNotifications((prev) => [payload, ...prev]);
-            setUnreadCount((prev) => prev + 1);
-            addToast(payload);
-          } catch (e) {
-            console.error('Failed to parse admin STOMP message:', e);
-          }
-        });
+        client.subscribe('/topic/admin/notifications', handleIncomingNotification);
       } else if (user.role === 'ROLE_STAFF') {
-        client.subscribe('/topic/staff/notifications', (message) => {
-          try {
-            const payload = JSON.parse(message.body);
-            setNotifications((prev) => [payload, ...prev]);
-            setUnreadCount((prev) => prev + 1);
-            addToast(payload);
-          } catch (e) {
-            console.error('Failed to parse staff STOMP message:', e);
-          }
-        });
+        client.subscribe('/topic/staff/notifications', handleIncomingNotification);
       }
     };
 

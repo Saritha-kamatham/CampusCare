@@ -30,4 +30,14 @@ export const adminService = {
     const response = await api.get('/users/staff');
     return response.data;
   },
+
+  async updateUser(id, data) {
+    const response = await api.put(`/admin/users/${id}`, data);
+    return response.data;
+  },
+
+  async getAnalyticsSummary() {
+    const response = await api.get('/analytics/summary');
+    return response.data;
+  },
 };

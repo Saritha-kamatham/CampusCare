@@ -67,4 +67,14 @@ export const issueService = {
     });
     return response.data;
   },
+
+  async getMyIssues() {
+    const response = await api.get('/issues/my');
+    return response.data;
+  },
+
+  async getOpenIssues() {
+    const response = await api.get('/issues/open');
+    return response.data;
+  },
 };

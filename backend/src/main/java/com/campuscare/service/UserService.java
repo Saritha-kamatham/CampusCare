@@ -175,4 +175,36 @@ public class UserService {
         user.setActive(!user.isActive());
         userRepository.save(user);
     }
+
+    @Transactional
+    public UserDTO updateUser(Long userId, UserDTO updates) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
+
+        if (updates.getName() != null && !updates.getName().trim().isEmpty()) {
+            user.setName(updates.getName().trim());
+        }
+        if (updates.getRole() != null) {
+            user.setRole(updates.getRole());
+        }
+        if (updates.getDepartment() != null) {
+            user.setDepartment(updates.getDepartment().trim());
+        }
+        if (updates.getPhone() != null) {
+            user.setPhone(updates.getPhone().trim());
+        }
+        if (updates.getEmail() != null && !updates.getEmail().trim().isEmpty()) {
+            String newEmail = updates.getEmail().toLowerCase().trim();
+            if (!newEmail.equals(user.getEmail()) && userRepository.existsByEmail(newEmail)) {
+                throw new BadRequestException("An account with email " + newEmail + " already exists.");
+            }
+            user.setEmail(newEmail);
+        }
+        if (updates.getProfileImageUrl() != null) {
+            user.setProfileImageUrl(updates.getProfileImageUrl());
+        }
+
+        user = userRepository.save(user);
+        return UserDTO.fromEntity(user);
+    }
 }

@@ -75,5 +75,9 @@ public interface IssueRepository extends JpaRepository<Issue, Long> {
 
     List<Issue> findTop5ByAssignedStaffIdOrderByCreatedAtDesc(Long staffId);
 
+    List<Issue> findByCreatedByIdOrderByCreatedAtDesc(Long studentId);
+
+    List<Issue> findByStatusAndAssignedStaffIsNullOrderByCreatedAtDesc(IssueStatus status);
+
     long countByCreatedAtAfter(LocalDateTime date);
 }

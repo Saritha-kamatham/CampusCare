@@ -16,6 +16,9 @@ import {
   Power,
   CheckCircle,
   XCircle,
+  Edit2,
+  X,
+  Save,
 } from 'lucide-react';
 
 export const UserManagementPage = () => {
@@ -29,6 +32,36 @@ export const UserManagementPage = () => {
   const [search, setSearch] = useState('');
   const [toggleConfirmUser, setToggleConfirmUser] = useState(null);
   const [toggling, setToggling] = useState(false);
+
+  const [editingUser, setEditingUser] = useState(null);
+  const [editFormData, setEditFormData] = useState({ name: '', department: '', phone: '', role: 'ROLE_STUDENT' });
+  const [savingEdit, setSavingEdit] = useState(false);
+
+  const openEditModal = (u) => {
+    setEditingUser(u);
+    setEditFormData({
+      name: u.name || '',
+      department: u.department || '',
+      phone: u.phone || '',
+      role: u.role || 'ROLE_STUDENT',
+    });
+  };
+
+  const handleSaveEdit = async (e) => {
+    e.preventDefault();
+    if (!editingUser) return;
+    setSavingEdit(true);
+    try {
+      await adminService.updateUser(editingUser.id, editFormData);
+      setEditingUser(null);
+      await fetchUsers();
+    } catch (err) {
+      console.error('Failed to update user:', err);
+      alert(err.response?.data?.message || 'Failed to update user');
+    } finally {
+      setSavingEdit(false);
+    }
+  };
 
   useEffect(() => {
     fetchUsers();
@@ -195,18 +228,28 @@ export const UserManagementPage = () => {
                         {formatDate(u.createdAt)}
                       </td>
                       <td className="px-6 py-4 text-right whitespace-nowrap">
-                        {u.role !== 'ROLE_ADMIN' ? (
+                        <div className="flex items-center justify-end gap-2">
                           <Button
-                            variant={u.active ? 'outline' : 'success'}
+                            variant="ghost"
                             size="sm"
-                            onClick={() => setToggleConfirmUser(u)}
-                            icon={Power}
+                            onClick={() => openEditModal(u)}
+                            icon={Edit2}
                           >
-                            {u.active ? 'Deactivate' : 'Reactivate'}
+                            Edit
                           </Button>
-                        ) : (
-                          <span className="text-xs text-slate-500 italic">Protected</span>
-                        )}
+                          {u.role !== 'ROLE_ADMIN' ? (
+                            <Button
+                              variant={u.active ? 'outline' : 'success'}
+                              size="sm"
+                              onClick={() => setToggleConfirmUser(u)}
+                              icon={Power}
+                            >
+                              {u.active ? 'Deactivate' : 'Reactivate'}
+                            </Button>
+                          ) : (
+                            <span className="text-xs text-slate-500 italic">Protected</span>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   );
@@ -260,6 +303,89 @@ export const UserManagementPage = () => {
           confirmText={toggleConfirmUser.active ? 'Deactivate' : 'Activate'}
           variant={toggleConfirmUser.active ? 'danger' : 'success'}
         />
+      )}
+
+      {/* Edit User Modal */}
+      {editingUser && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-in fade-in duration-150">
+          <div className="w-full max-w-md bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-2xl relative">
+            <div className="flex items-center justify-between pb-4 border-b border-slate-800">
+              <h3 className="text-lg font-semibold text-white">Edit User Profile</h3>
+              <button
+                onClick={() => setEditingUser(null)}
+                className="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveEdit} className="space-y-4 pt-4">
+              <div>
+                <label className="block text-xs font-medium text-slate-300 mb-1">Full Name</label>
+                <input
+                  type="text"
+                  value={editFormData.name}
+                  onChange={(e) => setEditFormData({ ...editFormData, name: e.target.value })}
+                  required
+                  className="w-full px-3 py-2 rounded-xl border border-slate-700 bg-slate-950 text-white text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-slate-300 mb-1">Role</label>
+                <select
+                  value={editFormData.role}
+                  onChange={(e) => setEditFormData({ ...editFormData, role: e.target.value })}
+                  className="w-full px-3 py-2 rounded-xl border border-slate-700 bg-slate-950 text-white text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
+                >
+                  <option value="ROLE_STUDENT">Student</option>
+                  <option value="ROLE_STAFF">Staff Specialist</option>
+                  <option value="ROLE_ADMIN">Administrator</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-slate-300 mb-1">Department / Faculty</label>
+                <input
+                  type="text"
+                  value={editFormData.department}
+                  onChange={(e) => setEditFormData({ ...editFormData, department: e.target.value })}
+                  placeholder="e.g. IT Services, Electrical, Facilities..."
+                  className="w-full px-3 py-2 rounded-xl border border-slate-700 bg-slate-950 text-white text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-slate-300 mb-1">Phone Number</label>
+                <input
+                  type="text"
+                  value={editFormData.phone}
+                  onChange={(e) => setEditFormData({ ...editFormData, phone: e.target.value })}
+                  placeholder="+1 (555) 000-0000"
+                  className="w-full px-3 py-2 rounded-xl border border-slate-700 bg-slate-950 text-white text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
+                />
+              </div>
+
+              <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-800">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setEditingUser(null)}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="submit"
+                  variant="primary"
+                  loading={savingEdit}
+                  icon={Save}
+                >
+                  Save Changes
+                </Button>
+              </div>
+            </form>
+          </div>
+        </div>
       )}
     </div>
   );

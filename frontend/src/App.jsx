@@ -76,6 +76,14 @@ export function App() {
               <Route path="/notifications" element={<NotificationsPage />} />
             </Route>
 
+            {/* Spec Route Aliases */}
+            <Route path="/student" element={<Navigate to="/dashboard" replace />} />
+            <Route path="/staff" element={<Navigate to="/staff-dashboard" replace />} />
+            <Route path="/admin" element={<Navigate to="/admin-dashboard" replace />} />
+            <Route path="/settings" element={<Navigate to="/profile" replace />} />
+            <Route path="/analytics" element={<Navigate to="/admin/analytics" replace />} />
+            <Route path="/users" element={<Navigate to="/admin/users" replace />} />
+
             {/* Catch-all 404 */}
             <Route path="*" element={<NotFoundPage />} />
           </Routes>

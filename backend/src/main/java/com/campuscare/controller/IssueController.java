@@ -19,6 +19,8 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/api/issues")
 public class IssueController {
@@ -71,13 +73,25 @@ public class IssueController {
         return ResponseEntity.ok(issues);
     }
 
+    @GetMapping("/my")
+    public ResponseEntity<List<IssueSummaryDTO>> getMyIssues(@AuthenticationPrincipal UserPrincipal principal) {
+        List<IssueSummaryDTO> issues = issueService.getMyIssues(principal.getId());
+        return ResponseEntity.ok(issues);
+    }
+
+    @GetMapping("/open")
+    public ResponseEntity<List<IssueSummaryDTO>> getOpenIssues() {
+        List<IssueSummaryDTO> issues = issueService.getOpenIssues();
+        return ResponseEntity.ok(issues);
+    }
+
     @GetMapping("/{id}")
     public ResponseEntity<IssueDetailDTO> getIssueDetail(@PathVariable Long id) {
         IssueDetailDTO issue = issueService.getIssueDetail(id);
         return ResponseEntity.ok(issue);
     }
 
-    @PostMapping("/{id}/assign")
+    @RequestMapping(value = "/{id}/assign", method = {RequestMethod.POST, RequestMethod.PUT})
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<IssueDetailDTO> assignIssue(
             @PathVariable Long id,

@@ -149,4 +149,9 @@ public class User {
     public void setUpdatedAt(LocalDateTime updatedAt) {
         this.updatedAt = updatedAt;
     }
+
+    // Spec compatibility alias method
+    public String getPasswordHash() {
+        return this.password;
+    }
 }
