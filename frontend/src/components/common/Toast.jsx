@@ -14,12 +14,15 @@ export const ToastContainer = () => {
       {toasts.map((toast) => {
         let Icon = Bell;
         let iconBg = 'bg-brand-500/10 text-brand-400 border border-brand-500/20';
-        if (toast.type === 'ISSUE_RESOLVED') {
+        if (toast.type === 'ISSUE_RESOLVED' || toast.type === 'ISSUE_CLOSED') {
           Icon = CheckCircle;
           iconBg = 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20';
-        } else if (toast.type === 'NEW_ISSUE' || toast.type === 'STATUS_CHANGED') {
-          Icon = AlertTriangle;
-          iconBg = 'bg-amber-500/10 text-amber-400 border border-amber-500/20';
+        } else if (toast.type === 'STATUS_CHANGED') {
+          Icon = Info;
+          iconBg = 'bg-indigo-500/10 text-indigo-400 border border-indigo-500/20';
+        } else if (toast.type === 'NEW_ISSUE') {
+          Icon = Bell;
+          iconBg = 'bg-brand-500/10 text-brand-400 border border-brand-500/20';
         }
 
         return (

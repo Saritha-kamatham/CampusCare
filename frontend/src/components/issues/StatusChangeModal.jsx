@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Modal } from '../common/Modal';
 import { Button } from '../common/Button';
 import { issueService } from '../../services/issueService';
@@ -9,13 +9,36 @@ export const StatusChangeModal = ({
   onClose,
   issue,
   availableStatuses = [],
+  defaultStatus,
   onStatusUpdateSuccess,
 }) => {
-  const [status, setStatus] = useState(availableStatuses[0] || 'RESOLVED');
+  const getInitialStatus = () => {
+    if (defaultStatus && availableStatuses.includes(defaultStatus)) {
+      return defaultStatus;
+    }
+    if (issue?.status === 'IN_PROGRESS' && availableStatuses.includes('RESOLVED')) {
+      return 'RESOLVED';
+    }
+    if (issue?.status === 'RESOLVED' && availableStatuses.includes('CLOSED')) {
+      return 'CLOSED';
+    }
+    return availableStatuses[0] || 'RESOLVED';
+  };
+
+  const [status, setStatus] = useState(getInitialStatus);
   const [notes, setNotes] = useState('');
   const [imageFile, setImageFile] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
   const [submitting, setSubmitting] = useState(false);
+
+  useEffect(() => {
+    if (isOpen) {
+      setStatus(getInitialStatus());
+      setNotes('');
+      setImageFile(null);
+      setImagePreview(null);
+    }
+  }, [isOpen, defaultStatus, issue?.status, availableStatuses.join(',')]);
 
   const handleImageChange = (e) => {
     const file = e.target.files[0];

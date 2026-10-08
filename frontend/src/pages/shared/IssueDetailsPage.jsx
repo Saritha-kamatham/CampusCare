@@ -374,11 +374,18 @@ export const IssueDetailsPage = () => {
           isOpen={statusModalOpen}
           onClose={() => setStatusModalOpen(false)}
           issue={issue}
+          defaultStatus={
+            issue.status === 'IN_PROGRESS'
+              ? 'RESOLVED'
+              : issue.status === 'RESOLVED'
+              ? 'CLOSED'
+              : 'IN_PROGRESS'
+          }
           availableStatuses={
             isAdmin
               ? ['REPORTED', 'ASSIGNED', 'IN_PROGRESS', 'RESOLVED', 'CLOSED']
               : isStaff
-              ? ['IN_PROGRESS', 'RESOLVED']
+              ? (issue.status === 'IN_PROGRESS' ? ['RESOLVED'] : ['IN_PROGRESS', 'RESOLVED'])
               : ['CLOSED']
           }
           onStatusUpdateSuccess={handleStatusUpdateSuccess}
