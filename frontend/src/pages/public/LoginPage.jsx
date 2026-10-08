@@ -17,11 +17,11 @@ export const LoginPage = () => {
   useEffect(() => {
     const roleParam = searchParams.get('role');
     if (roleParam === 'admin') {
-      fillCredentials('admin@campuscare.com', 'admin123');
+      fillCredentials('admin@campuscare.com', 'CampusCare@2026!');
     } else if (roleParam === 'staff') {
-      fillCredentials('staff2@campuscare.com', 'staff123');
+      fillCredentials('staff2@campuscare.com', 'CampusCare@2026!');
     } else if (roleParam === 'student') {
-      fillCredentials('student1@campuscare.com', 'student123');
+      fillCredentials('student1@campuscare.com', 'CampusCare@2026!');
     }
   }, [searchParams]);
 
@@ -78,21 +78,21 @@ export const LoginPage = () => {
             <div className="grid grid-cols-3 gap-1.5 text-xs">
               <button
                 type="button"
-                onClick={() => fillCredentials('admin@campuscare.com', 'admin123')}
+                onClick={() => fillCredentials('admin@campuscare.com', 'CampusCare@2026!')}
                 className="py-1.5 px-2 rounded-xl bg-purple-500/10 hover:bg-purple-500/20 text-purple-300 font-semibold border border-purple-500/20 text-center transition-colors"
               >
                 Admin
               </button>
               <button
                 type="button"
-                onClick={() => fillCredentials('staff2@campuscare.com', 'staff123')}
+                onClick={() => fillCredentials('staff2@campuscare.com', 'CampusCare@2026!')}
                 className="py-1.5 px-2 rounded-xl bg-blue-500/10 hover:bg-blue-500/20 text-blue-300 font-semibold border border-blue-500/20 text-center transition-colors"
               >
                 Staff (IT)
               </button>
               <button
                 type="button"
-                onClick={() => fillCredentials('student1@campuscare.com', 'student123')}
+                onClick={() => fillCredentials('student1@campuscare.com', 'CampusCare@2026!')}
                 className="py-1.5 px-2 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-300 font-semibold border border-emerald-500/20 text-center transition-colors"
               >
                 Student
@@ -117,6 +117,7 @@ export const LoginPage = () => {
                 <input
                   type="email"
                   required
+                  autoComplete="username"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="name@campuscare.com"
@@ -134,6 +135,7 @@ export const LoginPage = () => {
                 <input
                   type="password"
                   required
+                  autoComplete="current-password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
