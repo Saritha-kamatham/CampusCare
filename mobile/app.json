@@ -4,7 +4,6 @@
     "slug": "campuscare",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
     "userInterfaceStyle": "dark",
     "splash": {
       "backgroundColor": "#020617"
@@ -22,9 +21,6 @@
         "READ_EXTERNAL_STORAGE",
         "WRITE_EXTERNAL_STORAGE"
       ]
-    },
-    "web": {
-      "favicon": "./assets/favicon.png"
     }
   }
 }
